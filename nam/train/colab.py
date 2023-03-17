@@ -21,6 +21,7 @@ _BUGGY_INPUT_BASENAMES = {
 }
 _OUTPUT_BASENAME = "output.wav"
 _TRAIN_PATH = "."
+_DATA_PATH = "."
 
 
 def _check_for_files() -> Tuple[Version, str]:

@@ -111,7 +111,7 @@ def _calibrate_delay(
     else:
         print("Delay wasn't provided; attempting to calibrate automatically...")
         delay = calibrate(input_path, output_path)
-    plot(delay, input_path, output_path)
+    #plot(delay, input_path, output_path)
     return delay
 
 
@@ -234,6 +234,8 @@ def _get_configs(
     }
     if torch.cuda.is_available():
         device_config = {"accelerator": "gpu", "devices": 1}
+    elif torch.backends.mps.is_available():
+        device_config = {"accelerator": "mps", "devices": 1}
     else:
         print("WARNING: No GPU was found. Training will be very slow!")
         device_config = {}
