@@ -26,6 +26,7 @@ from .parametric.catnets import CatLSTM, CatWaveNet
 from .parametric.hyper_net import HyperConvNet
 from .recurrent import LSTM
 from .wavenet import WaveNet
+import auraloss
 
 
 class ValidationLoss(Enum):
@@ -107,6 +108,7 @@ class Model(pl.LightningModule, InitializableFromConfig):
         self._optimizer_config = {} if optimizer_config is None else optimizer_config
         self._scheduler_config = scheduler_config
         self._loss_config = LossConfig() if loss_config is None else loss_config
+        self.mrstft = auraloss.freq.MultiResolutionSTFTLoss()
 
     @classmethod
     def init_from_config(cls, config):
@@ -219,16 +221,21 @@ class Model(pl.LightningModule, InitializableFromConfig):
                 preds.mean(dim=mean_dims), targets.mean(dim=mean_dims)
             )
             loss = loss + dc_weight * dc_loss
+        if False:
+            stft_loss_weight = 2e-4
+            stft_loss = self._stft_loss(preds, targets)
+            loss = loss + stft_loss_weight * stft_loss
         return loss
 
     def validation_step(self, batch, batch_idx):
         preds, targets = self._shared_step(batch)
         mse_loss = self._mse_loss(preds, targets)
         esr_loss = self._esr_loss(preds, targets)
+        stft_loss = self._stft_loss(preds, targets)
         val_loss = {ValidationLoss.MSE: mse_loss, ValidationLoss.ESR: esr_loss}[
             self._loss_config.val_loss
         ]
-        self.log_dict({"MSE": mse_loss, "ESR": esr_loss, "val_loss": val_loss})
+        self.log_dict({"MSE": mse_loss, "ESR": esr_loss, "val_loss": val_loss, "stft_loss":stft_loss})
         return val_loss
 
     def _esr_loss(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
@@ -246,6 +253,22 @@ class Model(pl.LightningModule, InitializableFromConfig):
         :return: ()
         """
         return esr(preds, targets)
+
+    def _stft_loss(self, preds: torch.Tensor, targets: torch.Tensor) -> torch.Tensor:
+        """
+        B: Batch size
+        L: Sequence length
+
+        :param preds: (B,L)
+        :param targets: (B,L)
+        :return: ()
+        """
+        device = 'cpu'
+        preds_cpu = preds.to(device)
+        targets_cpu = targets.to(device)
+
+        loss = self.mrstft(preds_cpu, targets_cpu)
+        return loss
 
     def _mse_loss(self, preds, targets, pre_emph_coef: Optional[float] = None):
         if pre_emph_coef is not None:
