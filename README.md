@@ -1,4 +1,4 @@
-# NAM HD: Neural Amp Modeler in Stereoids (96kHz and longer time scale support)
+# NAM HD: Neural Amp Modeler on Stereoids (96kHz and longer time scale support)
 
 This repository if a fork of the NAM trainer, but it supports high-definition training using th GUI trainer. See advanced options to train in 96kHz and with HD model.
 
