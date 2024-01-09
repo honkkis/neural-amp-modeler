@@ -32,6 +32,7 @@ __all__ = ["train"]
 
 
 class Architecture(Enum):
+    HD = "hd"
     STANDARD = "standard"
     LITE = "lite"
     FEATHER = "feather"
@@ -673,6 +674,33 @@ def _check(
 
 def _get_wavenet_config(architecture):
     return {
+        Architecture.HD: {
+            "layers_configs": [
+                {
+                    "input_size": 1,
+                    "condition_size": 1,
+                    "channels": 16,
+                    "head_size": 8,
+                    "kernel_size": 3,
+                    "dilations": [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
+                    "activation": "Tanh",
+                    "gated": False,
+                    "head_bias": False,
+                },
+                {
+                    "condition_size": 1,
+                    "input_size": 16,
+                    "channels": 8,
+                    "head_size": 1,
+                    "kernel_size": 3,
+                    "dilations": [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 1024],
+                    "activation": "Tanh",
+                    "gated": False,
+                    "head_bias": True,
+                },
+            ],
+            "head_scale": 0.02,
+        },
         Architecture.STANDARD: {
             "layers_configs": [
                 {
@@ -801,6 +829,7 @@ def _get_configs(
     lr_decay: float,
     batch_size: int,
     fit_cab: bool,
+    resample_rate: int = None
 ):
     def get_kwargs(data_info: _DataInfo):
         if data_info.major_version == 1:
@@ -827,8 +856,8 @@ def _get_configs(
     ]
     train_kwargs, validation_kwargs = get_kwargs(data_info)
     data_config = {
-        "train": {"ny": ny, **train_kwargs},
-        "validation": {"ny": None, **validation_kwargs},
+        "train": {"ny": ny, "resample_rate": resample_rate, **train_kwargs},
+        "validation": {"ny": None, "resample_rate": resample_rate, **validation_kwargs},
         "common": {
             "x_path": input_path,
             "y_path": output_path,
@@ -885,14 +914,15 @@ def _get_configs(
             "drop_last": True,
             "num_workers": 0,
         },
-        "val_dataloader": {},
+        "val_dataloader": {
+        },
         "trainer": {"max_epochs": epochs, **device_config},
     }
     return data_config, model_config, learning_config
 
 
 def _get_dataloaders(
-    data_config: Dict, learning_config: Dict, model: Model
+    data_config: Dict, learning_config: Dict, model: Model, resample_rate: int = None
 ) -> Tuple[DataLoader, DataLoader]:
     data_config, learning_config = [deepcopy(c) for c in (data_config, learning_config)]
     data_config["common"]["nx"] = model.net.receptive_field
@@ -1015,6 +1045,7 @@ def train(
     ignore_checks: bool = False,
     local: bool = False,
     fit_cab: bool = False,
+    resample_rate: int = None,
 ) -> Optional[Model]:
     if seed is not None:
         torch.manual_seed(seed)
@@ -1060,6 +1091,7 @@ def train(
         lr_decay,
         batch_size,
         fit_cab,
+        resample_rate=resample_rate
     )
 
     print("Starting training. It's time to kick ass and chew bubblegum!")
