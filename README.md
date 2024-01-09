@@ -5,6 +5,13 @@ This repository if a fork of the NAM trainer, but it supports high-definition tr
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
 
+Training 96kHz models reduce alias quite dramatically as can be seen from the spectrogram of this sine sweep 
+![Alt text](https://private-user-images.githubusercontent.com/2007263/294770775-8ae6b2ae-7046-42f2-a7d9-8907bc5dc9d6.jpeg?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDQ4Mjc0OTYsIm5iZiI6MTcwNDgyNzE5NiwicGF0aCI6Ii8yMDA3MjYzLzI5NDc3MDc3NS04YWU2YjJhZS03MDQ2LTQyZjItYTdkOS04OTA3YmM1ZGM5ZDYuanBlZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNDAxMDklMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjQwMTA5VDE5MDYzNlomWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTJjMTMyNjViYTczNTA5YjFmMTQ0MjkwODAxZDljZmI3MmVjYjNlMWJmYmJhNDhjOGNjNDg0NWVhYjQwYTg1ZDEmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0JmFjdG9yX2lkPTAma2V5X2lkPTAmcmVwb19pZD0wIn0.8RYai3-5dLC-c3gyrU_GByUE5U73qhvj8NYCSr1WIAY "Title")
+
+Then when training in 96kHz, one can use the HD model, which reduces ESR:
+
+![Alt text](https://private-user-images.githubusercontent.com/2007263/295198239-9ed6bbfc-1676-4179-be03-4f84441456d2.png?jwt=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3MDQ4Mjc2MTQsIm5iZiI6MTcwNDgyNzMxNCwicGF0aCI6Ii8yMDA3MjYzLzI5NTE5ODIzOS05ZWQ2YmJmYy0xNjc2LTQxNzktYmUwMy00Zjg0NDQxNDU2ZDIucG5nP1gtQW16LUFsZ29yaXRobT1BV1M0LUhNQUMtU0hBMjU2JlgtQW16LUNyZWRlbnRpYWw9QUtJQVZDT0RZTFNBNTNQUUs0WkElMkYyMDI0MDEwOSUyRnVzLWVhc3QtMSUyRnMzJTJGYXdzNF9yZXF1ZXN0JlgtQW16LURhdGU9MjAyNDAxMDlUMTkwODM0WiZYLUFtei1FeHBpcmVzPTMwMCZYLUFtei1TaWduYXR1cmU9NjhkMGNlNTExM2MwNWNkNjU4MDgyOTRhNmQ4MjhjZTUzZjA5N2JjYjEzYzQ5OGJkNGZlOWI5Y2M0ODVkNTczZiZYLUFtei1TaWduZWRIZWFkZXJzPWhvc3QmYWN0b3JfaWQ9MCZrZXlfaWQ9MCZyZXBvX2lkPTAifQ.l4M_5Z6UqGMOm8jD947ufVTQYFxVClZPQhMjiwa52Yw "Title")
+
 
 This repository handles training, reamping, and exporting the weights of a model.
 For playing trained models in real time in a standalone application or plugin, see the partner repo,
@@ -16,6 +23,7 @@ For playing trained models in real time in a standalone application or plugin, s
   * [The command line trainer (all features)](https://github.com/sdatkinson/neural-amp-modeler/tree/main#the-command-line-trainer-all-features)
 * [Standardized reamping files](https://github.com/sdatkinson/neural-amp-modeler/tree/main#standardized-reamping-files)
 * [Other utilities](https://github.com/sdatkinson/neural-amp-modeler/tree/main#other-utilities)
+
 
 ## How to use
 There are three main ways to use the NAM trainer. There are two simplified trainers available (1) in your browser via Google Colab and (2) Locally via a GUI. There is also a full-featured trainer for power users than can be run from the command line.
