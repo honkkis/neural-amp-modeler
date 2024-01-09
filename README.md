@@ -2,6 +2,10 @@
 
 This repository if a fork of the NAM trainer, but it supports high-definition training using th GUI trainer. See advanced options to train in 96kHz and with HD model.
 
+
+![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
+
+
 This repository handles training, reamping, and exporting the weights of a model.
 For playing trained models in real time in a standalone application or plugin, see the partner repo,
 [NeuralAmpModelerPlugin](https://github.com/sdatkinson/NeuralAmpModelerPlugin).
