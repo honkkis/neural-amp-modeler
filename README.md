@@ -2,6 +2,7 @@
 
 This repository if a fork of the NAM trainer, but it supports high-definition training using th GUI trainer. See advanced options to train in 96kHz and with HD model.
 
+NOTE: the models trained with this will automatically work in the normal version of the NAM plugin without any changes. https://www.neuralampmodeler.com/
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
 
