@@ -1,10 +1,19 @@
 # NAM HD: Neural Amp Modeler on Stereoids (96kHz and longer time scale support)
 
-This repository if a fork of the NAM trainer, but it supports high-definition training using th GUI trainer. See advanced options to train in 96kHz and with HD model.
+This repository if a fork of the NAM trainer, but it supports high-definition training using the GUI trainer. See advanced options to train in 96kHz and with HD model.
 
 NOTE: the models trained with this will automatically work in the normal version of the NAM plugin without any changes. https://www.neuralampmodeler.com/
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
+
+Recommended advanced settings
+
+| Resample rate (Hz)         | Recommended model |
+|----------------------------|-------------------|
+| 48000 (no resampling)      | standard          |
+| 96000                      | hd                |
+| 192000 (more experimental) | ultrahd           |
+
 
 Training 96kHz models reduce alias quite dramatically as can be seen from the spectrogram of this sine sweep 
 ![Alt text](img/alias.jpg?raw=true "Title")
