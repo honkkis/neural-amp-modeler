@@ -6,13 +6,14 @@ NOTE: the models trained with this will automatically work in the normal version
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
 
-Recommended advanced settings
+Recommended Advanced Options:
 
-| Resample rate (Hz)         | Recommended model |
-|----------------------------|-------------------|
-| 48000 (no resampling)      | standard          |
-| 96000                      | hd                |
-| 192000 (more experimental) | ultrahd           |
+| Resample rate (Hz) | Recommended model | Notes               |
+|--------------------|-------------------|---------------------|
+| 48000              | standard          | no resampling       |
+| 96000              | hd                |                     |
+| 192000             | ultrahd           | more experimental   |
+
 
 
 Training 96kHz models reduce alias quite dramatically as can be seen from the spectrogram of this sine sweep 
