@@ -2,6 +2,8 @@
 
 This repository is a fork of the NAM trainer, but it supports high-definition training using the GUI trainer. No 96k training support for colab yet. See advanced options to train in 96kHz and with HD model.
 
+The main idea is that you provide the normal 48kHz training files (input and output) and this modified GUI trainer resamples them in memory during training. The workflow remains the same as with the normal GUI trainer, also batch training is supported.
+
 NOTE: the models trained with this will automatically work in the normal version of the NAM plugin without any changes. https://www.neuralampmodeler.com/
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
