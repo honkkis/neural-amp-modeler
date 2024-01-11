@@ -12,7 +12,7 @@ Recommended Advanced Options:
 |--------------------|-------------------|-----------------------------------------------------|
 | 48000              | standard          | no resampling, same as normal NAM trainer           |
 | 96000              | hd                | hd: comparable receptive field (2x) to standard_48k |
-| 192000             | ultrahd           | hd: comparable receptive field (4x) to standard_48k |
+| 192000             | ultrahd           | ultrahd: comparable receptive field (4x) to standard_48k |
 
 
 
