@@ -8,11 +8,11 @@ NOTE: the models trained with this will automatically work in the normal version
 
 Recommended Advanced Options:
 
-| Resample rate (Hz) | Recommended model | Notes               |
-|--------------------|-------------------|---------------------|
-| 48000              | standard          | no resampling       |
-| 96000              | hd                |                     |
-| 192000             | ultrahd           | more experimental   |
+| Resample rate (Hz) | Recommended model | Notes                                               |
+|--------------------|-------------------|-----------------------------------------------------|
+| 48000              | standard          | no resampling, same as normal NAM trainer           |
+| 96000              | hd                | hd: comparable receptive field (2x) to standard_48k |
+| 192000             | ultrahd           | hd: comparable receptive field (4x) to standard_48k |
 
 
 
