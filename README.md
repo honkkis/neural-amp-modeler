@@ -1,6 +1,6 @@
-# NAM HD: Neural Amp Modeler on Stereoids (96kHz and longer time scale support)
+# NAM HD: Neural Amp Modeler on Steroids (96kHz and longer time scale support)
 
-This repository is a fork of the NAM trainer, but it supports high-definition training using the GUI trainer. No 96k training support for colab yet. See advanced options to train in 96kHz and with HD model.
+This repository is a fork of the NAM trainer, but it supports high-definition training using the GUI trainer. (No 96kHz training support for Colab yet, just the GUI). See advanced options to train in 96kHz and with an HD model.
 
 The main idea is that you provide the normal 48kHz training files (input and output) and this modified GUI trainer resamples them in memory during training. The workflow remains the same as with the normal GUI trainer, also batch training is supported.
 
