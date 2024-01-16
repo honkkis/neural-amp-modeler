@@ -63,15 +63,24 @@ class AudioShapeMismatchError(ValueError):
 
 def wav_to_np(
     filename: Union[str, Path],
-    rate: Optional[int] = _DEFAULT_RATE,
+    rate: Optional[int] = None,
     require_match: Optional[Union[str, Path]] = None,
-    required_shape: Optional[Tuple[int]] = None,
+    required_shape: Optional[Tuple[int, ...]] = None,
     required_wavinfo: Optional[WavInfo] = None,
     preroll: Optional[int] = None,
     info: bool = False,
 ) -> Union[np.ndarray, Tuple[np.ndarray, WavInfo]]:
     """
+    :param filename: Where to load from
+    :param rate: Expected sample rate. `None` allows for anything.
+    :param require_match: If not `None`, assert that the data you get matches the shape
+        and other characteristics of another audio file at the provided location
+    :param required_shape: If not `None`, assert that the audio loaded is of shape
+        `(num_samples, num_channels)`.
+    :param required_wavinfo: If not `None`, assert that the WAV info of the laoded audio
+        matches that provided.
     :param preroll: Drop this many samples off the front
+    :param info: If `True`, also return the WAV info of this file.
     """
     x_wav = wavio.read(str(filename))
     assert x_wav.data.shape[1] == _REQUIRED_CHANNELS, "Mono"
@@ -144,16 +153,10 @@ def np_to_wav(
 
 class AbstractDataset(_Dataset, abc.ABC):
     @abc.abstractmethod
-    def __getitem__(
-        self, idx: int
-    ) -> Union[
-        Tuple[torch.Tensor, torch.Tensor],
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor],
-    ]:
+    def __getitem__(self, idx: int):
         """
+        Get input and output audio segment for training / evaluation.
         :return:
-            Case 1: Input (N1,), Output (N2,)
-            Case 2: Parameters (D,), Input (N1,), Output (N2,)
         """
         pass
 
@@ -220,8 +223,6 @@ _DEFAULT_REQUIRE_INPUT_PRE_SILENCE = 0.4
 class Dataset(AbstractDataset, InitializableFromConfig):
     """
     Take a pair of matched audio files and serve input + output pairs.
-
-    No conditioning parameters associated w/ the data.
     """
 
     def __init__(
@@ -232,6 +233,10 @@ class Dataset(AbstractDataset, InitializableFromConfig):
         ny: Optional[int],
         start: Optional[int] = None,
         stop: Optional[int] = None,
+        start_samples: Optional[int] = None,
+        stop_samples: Optional[int] = None,
+        start_seconds: Optional[Union[int, float]] = None,
+        stop_seconds: Optional[Union[int, float]] = None,
         delay: Optional[Union[int, float]] = None,
         delay_interpolation_method: Union[
             str, _DelayInterpolationMethod
@@ -256,8 +261,18 @@ class Dataset(AbstractDataset, InitializableFromConfig):
             shouldn't be too large or else you won't be able to provide a large batch
             size (where each input-output pair could be something substantially
             different and improve batch diversity).
-        :param start: In samples; clip x and y up to this point.
-        :param stop: In samples; clip x and y past this point.
+        :param start: [DEPRECATED; use start_samples instead.] In samples; clip x and y
+            at this point. Negative values are taken from the end of the audio.
+        :param stop: [DEPRECATED; use stop_samples instead.] In samples; clip x and y at
+            this point. Negative values are taken from the end of the audio.
+        :param start_samples: Clip x and y at this point. Negative values are taken from
+            the end of the audio.
+        :param stop: Clip x and y at this point. Negative values are taken from the end
+            of the audio.
+        :param start_seconds: Clip x and y at this point. Negative values are taken from
+            the end of the audio. Requires providing `sample_rate`.
+        :param stop_seconds: Clip x and y at this point. Negative values are taken from
+            the end of the audio. Requires providing `sample_rate`.
         :param delay: In samples. Positive means we get rid of the start of x, end of y
             (i.e. we are correcting for an alignment error in which y is delayed behind
             x). If a non-integer delay is provided, then y is interpolated, with
@@ -280,8 +295,20 @@ class Dataset(AbstractDataset, InitializableFromConfig):
             into the data set that we're trying to use. If `None`, don't assert.
         """
         self._validate_x_y(x, y)
-        self._validate_start_stop(x, y, start, stop)
-        self._sample_rate = self._validate_sample_rate(sample_rate, rate)
+        self._sample_rate = self._validate_sample_rate(
+            sample_rate, rate, default=_DEFAULT_RATE
+        )
+        start, stop = self._validate_start_stop(
+            x,
+            y,
+            start,
+            stop,
+            start_samples,
+            stop_samples,
+            start_seconds,
+            stop_seconds,
+            self._sample_rate,
+        )
         self._resample_rate = resample_rate
         if not isinstance(delay_interpolation_method, _DelayInterpolationMethod):
             delay_interpolation_method = _DelayInterpolationMethod(
@@ -374,18 +401,20 @@ class Dataset(AbstractDataset, InitializableFromConfig):
 
     @classmethod
     def parse_config(cls, config):
-        x, x_wavinfo = wav_to_tensor(
-            config["x_path"], info=True, rate=config.get("rate")
+        config = deepcopy(config)
+        sample_rate = cls._validate_sample_rate(
+            config.pop("sample_rate", None), config.pop("rate", None)
         )
-        rate = x_wavinfo.rate
         resample_rate = None
         if 'resample_rate' in config:
             resample_rate = config['resample_rate']
+        x, x_wavinfo = wav_to_tensor(config.pop("x_path"), info=True, rate=sample_rate)
+        sample_rate = x_wavinfo.rate
         try:
             y = wav_to_tensor(
-                config["y_path"],
-                rate=rate,
-                preroll=config.get("y_preroll"),
+                config.pop("y_path"),
+                rate=sample_rate,
+                preroll=config.pop("y_preroll", None),
                 required_shape=(len(x), 1),
                 required_wavinfo=x_wavinfo,
             )
@@ -395,8 +424,8 @@ class Dataset(AbstractDataset, InitializableFromConfig):
             y_samples, y_channels = e.shape_actual
             msg = "Your audio files aren't the same shape as each other!"
             if x_channels != y_channels:
-                ctosm = {1: "mono", 2: "stereo"}
-                msg += f"\n * The input is {ctosm[x_channels]}, but the output is {ctosm[y_channels]}!"
+                channels_to_stereo_mono = {1: "mono", 2: "stereo"}
+                msg += f"\n * The input is {channels_to_stereo_mono[x_channels]}, but the output is {channels_to_stereo_mono[y_channels]}!"
             if x_samples != y_samples:
 
                 def sample_to_time(s, rate):
@@ -415,29 +444,14 @@ class Dataset(AbstractDataset, InitializableFromConfig):
                         f"{hours}:{minutes:02d}:{seconds:02d} and {remainder} samples"
                     )
 
-                msg += f"\n * The input is {sample_to_time(x_samples, rate)} long"
-                msg += f"\n * The output is {sample_to_time(y_samples, rate)} long"
+                msg += (
+                    f"\n * The input is {sample_to_time(x_samples, sample_rate)} long"
+                )
+                msg += (
+                    f"\n * The output is {sample_to_time(y_samples, sample_rate)} long"
+                )
             raise ValueError(msg)
-        return {
-            "x": x,
-            "y": y,
-            "nx": config["nx"],
-            "ny": config["ny"],
-            "start": config.get("start"),
-            "stop": config.get("stop"),
-            "delay": config.get("delay"),
-            "delay_interpolation_method": config.get(
-                "delay_interpolation_method", _DelayInterpolationMethod.CUBIC.value
-            ),
-            "y_scale": config.get("y_scale", 1.0),
-            "x_path": config["x_path"],
-            "y_path": config["y_path"],
-            "sample_rate": rate,
-            "resample_rate": resample_rate,
-            "require_input_pre_silence": config.get(
-                "require_input_pre_silence", _DEFAULT_REQUIRE_INPUT_PRE_SILENCE
-            ),
-        }
+        return {"x": x, "y": y, "sample_rate": sample_rate, "resample_rate": resample_rate,  **config}
 
     @classmethod
     def _apply_delay(
@@ -485,10 +499,10 @@ class Dataset(AbstractDataset, InitializableFromConfig):
 
     @classmethod
     def _validate_sample_rate(
-        cls, sample_rate: Optional[float], rate: Optional[int]
+        cls, sample_rate: Optional[float], rate: Optional[int], default=None
     ) -> float:
         if sample_rate is None and rate is None:  # Default value
-            return _DEFAULT_RATE
+            return default
         if rate is not None:
             if sample_rate is not None:
                 raise ValueError(
@@ -504,23 +518,79 @@ class Dataset(AbstractDataset, InitializableFromConfig):
 
     @classmethod
     def _validate_start_stop(
-        self,
+        cls,
         x: torch.Tensor,
         y: torch.Tensor,
         start: Optional[int] = None,
         stop: Optional[int] = None,
-    ):
+        start_samples: Optional[int] = None,
+        stop_samples: Optional[int] = None,
+        start_seconds: Optional[Union[int, float]] = None,
+        stop_seconds: Optional[Union[int, float]] = None,
+        sample_rate: Optional[int] = None,
+    ) -> Tuple[Optional[int], Optional[int]]:
         """
-        Check for potential input errors.
+        Parse the requested start and stop trim points.
 
         These may be valid indices in Python, but probably point to invalid usage, so
         we will raise an exception if something fishy is going on (e.g. starting after
         the end of the file, etc)
+
+        :return: parsed start/stop (if valid).
         """
+
+        def parse_start_stop(s, samples, seconds, rate):
+            # Assumes validated inputs
+            if s is not None:
+                return s
+            if samples is not None:
+                return samples
+            if seconds is not None:
+                return int(seconds * rate)
+            # else
+            return None
+
+        # Resolve different ways of asking for start/stop...
+        if start is not None:
+            logger.warning("Using `start` is deprecated; use `start_samples` instead.")
+        if start is not None:
+            logger.warning("Using `stop` is deprecated; use `start_samples` instead.")
+        if (
+            int(start is not None)
+            + int(start_samples is not None)
+            + int(start_seconds is not None)
+            >= 2
+        ):
+            raise ValueError(
+                "More than one start provided. Use only one of `start`, `start_samples`, or `start_seconds`!"
+            )
+        if (
+            int(stop is not None)
+            + int(stop_samples is not None)
+            + int(stop_seconds is not None)
+            >= 2
+        ):
+            raise ValueError(
+                "More than one stop provided. Use only one of `stop`, `stop_samples`, or `stop_seconds`!"
+            )
+        if start_seconds is not None and sample_rate is None:
+            raise ValueError(
+                "Provided `start_seconds` without sample rate; cannot resolve into samples!"
+            )
+        if stop_seconds is not None and sample_rate is None:
+            raise ValueError(
+                "Provided `stop_seconds` without sample rate; cannot resolve into samples!"
+            )
+
+        # By this point, we should have a valid, unambiguous way of asking.
+        start = parse_start_stop(start, start_samples, start_seconds, sample_rate)
+        stop = parse_start_stop(stop, stop_samples, stop_seconds, sample_rate)
+        # And only use start/stop from this point.
+
         # We could do this whole thing with `if len(x[start: stop]==0`, but being more
         # explicit makes the error messages better for users.
         if start is None and stop is None:
-            return
+            return start, stop
         if len(x) != len(y):
             raise ValueError(
                 f"Input and output are different length. Input has {len(x)} samples, "
@@ -559,6 +629,7 @@ class Dataset(AbstractDataset, InitializableFromConfig):
                 f"Array length {n} with start={start} and stop={stop} would get "
                 "rid of all of the data!"
             )
+        return start, stop
 
     @classmethod
     def _validate_x_y(self, x, y):
@@ -613,75 +684,6 @@ class Dataset(AbstractDataset, InitializableFromConfig):
                 "before the starting index. Responses to this non-silent input may "
                 "leak into the dataset!"
             )
-
-
-class ParametricDataset(Dataset):
-    """
-    Additionally tracks some conditioning parameters
-    """
-
-    def __init__(self, params: Dict[str, Union[bool, float, int]], *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self._keys = sorted(tuple(k for k in params.keys()))
-        self._vals = torch.Tensor([float(params[k]) for k in self._keys])
-
-    @classmethod
-    def init_from_config(cls, config):
-        if "slices" not in config:
-            return super().init_from_config(config)
-        else:
-            return cls.init_from_config_with_slices(config)
-
-    @classmethod
-    def init_from_config_with_slices(cls, config):
-        config, x, y, slices = cls.parse_config_with_slices(config)
-        datasets = []
-        for s in tqdm(slices, desc="Slices..."):
-            c = deepcopy(config)
-            start, stop, params = [s[k] for k in ("start", "stop", "params")]
-            c.update(x=x[start:stop], y=y[start:stop], params=params)
-            if "delay" in s:
-                c["delay"] = s["delay"]
-            datasets.append(ParametricDataset(**c))
-        return ConcatDataset(datasets)
-
-    @classmethod
-    def parse_config(cls, config):
-        assert "slices" not in config
-        params = config["params"]
-        return {
-            "params": params,
-            "id": config.get("id"),
-            "common_params": config.get("common_params"),
-            "param_map": config.get("param_map"),
-            **super().parse_config(config),
-        }
-
-    @classmethod
-    def parse_config_with_slices(cls, config):
-        slices = config["slices"]
-        config = super().parse_config(config)
-        x, y = [config.pop(k) for k in "xy"]
-        return config, x, y, slices
-
-    def __getitem__(self, idx: int) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        """
-        :return:
-            Parameter values (D,)
-            Input (NX+NY-1,)
-            Output (NY,)
-        """
-        # FIXME don't override signature
-        x, y = super().__getitem__(idx)
-        return self.vals, x, y
-
-    @property
-    def keys(self) -> Tuple[str]:
-        return self._keys
-
-    @property
-    def vals(self):
-        return self._vals
 
 
 class ConcatDataset(AbstractDataset, InitializableFromConfig):
@@ -764,35 +766,23 @@ class ConcatDataset(AbstractDataset, InitializableFromConfig):
                 raise ValueError(
                     f"Mismatch between ny of datasets {ref_ny.index} ({ref_ny.val}) and {i} ({d.ny})"
                 )
-            if isinstance(d, ParametricDataset):
-                val = d.keys
-                if ref_keys is None:
-                    ref_keys = Reference(i, val)
-                if val != ref_keys.val:
-                    raise ValueError(
-                        f"Mismatch between keys of datasets {ref_keys.index} "
-                        f"({ref_keys.val}) and {i} ({val})"
-                    )
 
 
-_dataset_init_registry = {
-    "dataset": Dataset.init_from_config,
-    "parametric": ParametricDataset.init_from_config,  # To be removed in v0.8
-}
+_dataset_init_registry = {"dataset": Dataset.init_from_config}
 
 
 def register_dataset_initializer(
     name: str, constructor: Callable[[Any], AbstractDataset], overwrite=False
 ):
     """
-    If you have otehr data set types, you can register their initializer by name using
+    If you have other data set types, you can register their initializer by name using
     this.
 
     For example, the basic NAM is registered by default under the name "default", but if
     it weren't, you could register it like this:
 
     >>> from nam import data
-    >>> data.register_dataset_initializer("parametric", data.Dataset.init_from_config)
+    >>> data.register_dataset_initializer("parametric", MyParametricDataset.init_from_config)
 
     :param name: The name that'll be used in the config to ask for the data set type
     :param constructor: The constructor that'll be fed the config.
@@ -805,16 +795,7 @@ def register_dataset_initializer(
 
 
 def init_dataset(config, split: Split) -> AbstractDataset:
-    if "parametric" in config:
-        logger.warning(
-            "Using the 'parametric' keyword is deprecated and will be removed in next "
-            "version. Instead, register the parametric dataset type using "
-            "`nam.data.register_dataset_initializer()` and then specify "
-            '`"type": "name"` in the config, using the name you registered.'
-        )
-        name = "parametric" if config["parametric"] else "dataset"
-    else:
-        name = config.get("type", "dataset")
+    name = config.get("type", "dataset")
     base_config = config[split.value]
     common = config.get("common", {})
     if isinstance(base_config, dict):
