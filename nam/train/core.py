@@ -857,7 +857,8 @@ def _get_configs(
     lr_decay: float,
     batch_size: int,
     fit_cab: bool,
-    resample_rate: int = None
+    resample_rate: int = None,
+    stft_loss_weight: float = None
 ):
     def get_kwargs(data_info: _DataInfo):
         if data_info.major_version == 1:
@@ -926,6 +927,9 @@ def _get_configs(
     if fit_cab:
         model_config["loss"]["pre_emph_mrstft_weight"] = _CAB_MRSTFT_PRE_EMPH_WEIGHT
         model_config["loss"]["pre_emph_mrstft_coef"] = _CAB_MRSTFT_PRE_EMPH_COEF
+
+    if stft_loss_weight > 0.0:
+        model_config["loss"]["mrstft_weight"] = stft_loss_weight
 
     if torch.cuda.is_available():
         device_config = {"accelerator": "gpu", "devices": 1}
@@ -1074,6 +1078,7 @@ def train(
     local: bool = False,
     fit_cab: bool = False,
     resample_rate: int = None,
+    stft_loss_weight: float = None,
 ) -> Optional[Model]:
     if seed is not None:
         torch.manual_seed(seed)
@@ -1119,7 +1124,8 @@ def train(
         lr_decay,
         batch_size,
         fit_cab,
-        resample_rate=resample_rate
+        resample_rate=resample_rate,
+        stft_loss_weight=stft_loss_weight
     )
 
     print("Starting training. It's time to kick ass and chew bubblegum!")

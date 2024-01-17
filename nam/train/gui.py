@@ -61,6 +61,8 @@ else:
 _BUTTON_WIDTH = 20
 _BUTTON_HEIGHT = 2
 _TEXT_WIDTH = 70
+_DEFAULT_SPECTRAL_LOSS = 0.0
+
 
 class _SampleRates(Enum):
     S48K = "48000"
@@ -83,6 +85,7 @@ class _AdvancedOptions(object):
     delay: Optional[int]
     ignore_checks: bool
     sample_rate: _SampleRates
+    spectral_loss: float
 
 
 class _PathType(Enum):
@@ -234,6 +237,7 @@ class _GUI(object):
             _DEFAULT_DELAY,
             _DEFAULT_IGNORE_CHECKS,
             _DEFAULT_SAMPLE_RATE,
+            _DEFAULT_SPECTRAL_LOSS,
         )
         # Window to edit them:
         self._frame_advanced_options = tk.Frame(self._root)
@@ -349,6 +353,7 @@ class _GUI(object):
         delay = self.advanced_options.delay
         file_list = self._path_button_output.val
         sample_rate = self.advanced_options.sample_rate
+        spectral_loss = self.advanced_options.spectral_loss
 
         # Advanced-er options
         # If you're poking around looking for these, then maybe it's time to learn to
@@ -382,7 +387,8 @@ class _GUI(object):
                 ].variable.get(),
                 local=True,
                 fit_cab=self._checkboxes[_CheckboxKeys.FIT_CAB].variable.get(),
-                resample_rate=int(sample_rate.value)
+                resample_rate=int(sample_rate.value),
+                stft_loss_weight=spectral_loss,
             )
             if trained_model is None:
                 print("Model training failed! Skip exporting...")
@@ -410,6 +416,12 @@ def _non_negative_int(val):
     val = int(val)
     if val < 0:
         val = 0
+    return val
+
+def _non_negative_float(val):
+    val = float(val)
+    if val < 0.0:
+        val = 0.0
     return val
 
 
@@ -591,6 +603,17 @@ class _AdvancedOptionsGUI(object):
             default=self._parent.advanced_options.sample_rate,
         )
 
+        # Spectral loss weight
+        self._frame_spectral = tk.Frame(self._root)
+        self._frame_spectral.pack()
+
+        self._spectral = _LabeledText(
+            self._frame_spectral,
+            "Spectral_loss",
+            default=str(self._parent.advanced_options.spectral_loss),
+            type=_non_negative_float,
+        )
+
 
         # "Ok": apply and destory
         self._frame_ok = tk.Frame(self._root)
@@ -621,6 +644,10 @@ class _AdvancedOptionsGUI(object):
         # Value None is returned as "null" to disambiguate from non-set.
         if delay is not None:
             self._parent.advanced_options.delay = None if delay == "null" else delay
+        # Retrieve and set the spectral_loss value
+        spectral_loss = self._spectral.get()
+        if spectral_loss is not None:
+            self._parent.advanced_options.spectral_loss = spectral_loss
         self._root.destroy()
 
 
