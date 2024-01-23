@@ -64,6 +64,8 @@ _TEXT_WIDTH = 70
 
 class _SampleRates(Enum):
     S48K = "48000"
+    S44K = "44100"
+    S88K = "88200"
     S96K = "96000"
     S192K = "192000"
 
