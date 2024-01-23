@@ -12,8 +12,8 @@ Recommended Advanced Options:
 
 | Resample rate (Hz) | Recommended model | Notes                                               |
 |--------------------|-------------------|-----------------------------------------------------|
-| 48000, 44100       | standard          | no resampling, same as normal NAM trainer           |
-| 96000, 88200       | hd                | hd: comparable receptive field (2x) to standard_48k |
+| 48000, (44100)     | standard          | no resampling, same as normal NAM trainer           |
+| 96000, (88200)     | hd                | hd: comparable receptive field (2x) to standard_48k |
 | 192000             | ultrahd           | ultrahd: comparable receptive field (4x) to standard_48k |
 
 
