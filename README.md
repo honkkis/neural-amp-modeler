@@ -38,9 +38,27 @@ For playing trained models in real time in a standalone application or plugin, s
 * [Other utilities](https://github.com/sdatkinson/neural-amp-modeler/tree/main#other-utilities)
 
 
+
 ## How to install the NAM HD version
 
-1. Download the NAM HD code to your computer
+Using PIP
+
+```bash   
+pip install --upgrade https://github.com/honkkis/neural-amp-modeler-HD/archive/refs/heads/main.zip
+```
+
+Run NAMHD
+
+```bash   
+nam
+```
+Victory!
+
+
+## How to install the NAM HD version (OPTION 2, using Conda)
+
+
+1. Install Conda and Download the NAM HD code to your computer
 ```bash   
 wget https://github.com/honkkis/neural-amp-modeler-HD/archive/refs/heads/main.zip 
 ```
