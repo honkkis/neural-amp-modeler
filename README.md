@@ -38,6 +38,44 @@ For playing trained models in real time in a standalone application or plugin, s
 * [Other utilities](https://github.com/sdatkinson/neural-amp-modeler/tree/main#other-utilities)
 
 
+## How to install the NAM HD version
+
+1. Download the NAM HD code to your computer
+```bash   
+wget https://github.com/honkkis/neural-amp-modeler-HD/archive/refs/heads/main.zip 
+```
+3. unzip the code
+```bash   
+unzip main.zip
+```
+   
+3. cd to the dir
+
+```bash   
+cd neural-amp-modeler-HD-main
+```
+
+4. install (make sure you have conda installed)
+
+```bash   
+conda env create -f environment_cpu.yml --name namhd
+```
+
+5. change to the newly create conda env
+
+```bash   
+conda activate namhd
+```
+
+6. run the UI
+
+```bash   
+python -m nam.train.gui
+```
+
+7. Victory!
+
+
 ## How to use
 There are three main ways to use the NAM trainer. There are two simplified trainers available (1) in your browser via Google Colab and (2) Locally via a GUI. There is also a full-featured trainer for power users than can be run from the command line.
 
