@@ -4,7 +4,7 @@ This repository is a fork of the NAM trainer, but it supports high-definition tr
 
 The main idea is that you provide the normal 48kHz training files (input and output) and this modified GUI trainer resamples them in memory during training. The workflow remains the same as with the normal GUI trainer, also batch training is supported.
 
-NOTE: the models trained with this will automatically work in the normal version of the NAM plugin without any changes. https://www.neuralampmodeler.com/
+NOTE: the models trained with this will automatically work in the normal version of the NAM plugin without any changes. https://www.neuralampmodeler.com/ . Note that you need to run the whole project in 96kHz or then use e.g., Reaper 2x effects oversampling. The oversampling in the standard plugin does not include antialias filter. Another alternative is to use this fork of the plugin: https://github.com/honkkis/NeuralAmpModelerPluginHD
 
 ![Alt text](img/hd_96000_advanced_options.png?raw=true "Title")
 
