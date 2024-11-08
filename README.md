@@ -58,7 +58,10 @@ cd neural-amp-modeler-HD-main
 4. install (make sure you have conda installed)
 
 ```bash   
-conda env create -f environment_cpu.yml --name namhd
+
+conda env create -f environment_gpu.yml --name namhd
+
+(OR conda env create -f environment_cpu.yml --name namhd)
 ```
 
 5. change to the newly create conda env
