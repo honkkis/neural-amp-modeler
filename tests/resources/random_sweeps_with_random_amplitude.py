@@ -35,13 +35,13 @@ np.random.seed(SEED)
 SAMPLE_RATE = 48000
 
 # Number of sweeps to generate.
-NUM_SWEEPS = 40  # Increased number of sweeps due to shorter sweep duration.
+NUM_SWEEPS = 160  # Increased number of sweeps due to shorter sweep duration.
 
 # Duration of each sweep in seconds (shorter than before).
 SWEEP_DURATION = 5.0
 
 # Total duration of the output file in seconds.
-TOTAL_DURATION = 60.0
+TOTAL_DURATION = 240.0
 
 # Minimum and maximum frequencies (in Hz) for the sweeps.
 MIN_FREQ = 20       # Include low-frequency content.
@@ -57,7 +57,7 @@ MAX_AMP = 1.0
 MIX_PROB = 0.5
 
 # Output filename.
-OUTPUT_FILENAME = 'random_sine_sweeps_mixed_freqs_float.wav'
+OUTPUT_FILENAME = 'random_sine_sweeps_mixed_freqs_float_240sec.wav'
 # ========================================================
 
 def sample_frequency(min_freq, max_freq, mix_prob):
