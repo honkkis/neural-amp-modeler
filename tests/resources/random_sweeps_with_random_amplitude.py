@@ -52,7 +52,7 @@ MIN_AMP = 0.1
 MAX_AMP = 1.0
 
 # Output filename.
-OUTPUT_FILENAME = 'random_sine_sweeps_random_amplitude.wav'
+OUTPUT_FILENAME = 'random_sine_sweeps_float.wav'
 # ========================================================
 
 # Total number of samples for the final output.
@@ -117,15 +117,15 @@ for i in range(NUM_SWEEPS):
     sweep_type = 'Logarithmic' if is_logarithmic else 'Linear'
     print(f"Sweep {i+1}: {sweep_type} sweep from {f_start:.2f} Hz to {f_end:.2f} Hz, amplitude {amplitude:.2f}, starting at {start_time:.2f} s.")
 
-# Normalize the final signal to prevent clipping.
+# Normalize the final signal to prevent clipping (values will be in [-1, 1]).
 max_val = np.max(np.abs(output_signal))
 if max_val > 0:
     output_signal /= max_val
     output_signal *= 0.9  # Scale to 90% of the full range.
 
-# Convert the signal to 16-bit PCM format.
-output_int16 = np.int16(output_signal * 32767)
+# Convert the signal to 32-bit float for float based WAV output.
+output_signal = output_signal.astype(np.float32)
 
-# Save the generated signal to disk as a WAV file.
-wavfile.write(OUTPUT_FILENAME, SAMPLE_RATE, output_int16)
+# Save the generated signal to disk as a WAV file with float format.
+wavfile.write(OUTPUT_FILENAME, SAMPLE_RATE, output_signal)
 print(f"\nSaved generated sweeps to '{OUTPUT_FILENAME}'.")
