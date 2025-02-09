@@ -51,9 +51,25 @@ MAX_FREQ = 24000    # Up to 24 kHz.
 MIN_AMP = 0.1
 MAX_AMP = 1.0
 
+# Mix ratio for frequency selection:
+# With probability MIX_PROB, select frequency uniformly (linear) across [MIN_FREQ, MAX_FREQ],
+# otherwise use logarithmic selection.
+MIX_PROB = 0.5
+
 # Output filename.
-OUTPUT_FILENAME = 'random_sine_sweeps_float.wav'
+OUTPUT_FILENAME = 'random_sine_sweeps_mixed_freqs_float.wav'
 # ========================================================
+
+def sample_frequency(min_freq, max_freq, mix_prob):
+    """
+    Sample a frequency between min_freq and max_freq using a mixture of linear and logarithmic
+    selection. With probability mix_prob, the frequency is sampled uniformly in linear space;
+    otherwise, it is sampled uniformly in logarithmic space.
+    """
+    if random.random() < mix_prob:
+        return random.uniform(min_freq, max_freq)
+    else:
+        return math.exp(random.uniform(math.log(min_freq), math.log(max_freq)))
 
 # Total number of samples for the final output.
 total_samples = int(TOTAL_DURATION * SAMPLE_RATE)
@@ -69,11 +85,9 @@ for i in range(NUM_SWEEPS):
     # Time vector for the sweep.
     t = np.linspace(0, SWEEP_DURATION, int(SWEEP_DURATION * SAMPLE_RATE), endpoint=False)
 
-    # Randomize sweep parameters:
-    # Frequencies are chosen uniformly in logarithmic space for a balanced representation
-    # across octaves (more low-frequency resolution).
-    f_start = math.exp(random.uniform(math.log(MIN_FREQ), math.log(MAX_FREQ)))
-    f_end   = math.exp(random.uniform(math.log(MIN_FREQ), math.log(MAX_FREQ)))
+    # Randomize sweep frequency parameters using the mixture sampler.
+    f_start = sample_frequency(MIN_FREQ, MAX_FREQ, MIX_PROB)
+    f_end   = sample_frequency(MIN_FREQ, MAX_FREQ, MIX_PROB)
 
     # Randomize amplitude for this sweep.
     amplitude = random.uniform(MIN_AMP, MAX_AMP)
@@ -123,7 +137,7 @@ if max_val > 0:
     output_signal /= max_val
     output_signal *= 0.9  # Scale to 90% of the full range.
 
-# Convert the signal to 32-bit float for float based WAV output.
+# Convert the signal to 32-bit float for float-based WAV output.
 output_signal = output_signal.astype(np.float32)
 
 # Save the generated signal to disk as a WAV file with float format.
